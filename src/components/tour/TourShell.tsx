@@ -8,9 +8,11 @@ import {
   t,
 } from "@/content/tour";
 import { readTourParams, syncTourUrl } from "@/lib/tourUrl";
+import type { TourVideo } from "@/types/tour";
 import { InfoPanel } from "./InfoPanel";
 import { TourOverlay } from "./TourOverlay";
 import { TourViewer } from "./TourViewer";
+import { VideoControls } from "./VideoControls";
 
 const DEFAULT_SCENE_ID = siteContent.areas[0]?.scenes[0]?.id ?? "eksterior-1";
 const DEBUG = process.env.NEXT_PUBLIC_TOUR_DEBUG === "true";
@@ -30,17 +32,30 @@ export function TourShell() {
   const [isVr, setIsVr] = useState(false);
   const [showHint, setShowHint] = useState(true);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<TourVideo | null>(null);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
 
   const resolved = getSceneById(sceneId) ?? getSceneById(DEFAULT_SCENE_ID);
   const activeArea = resolved?.area;
   const activeScene = resolved?.scene;
 
-  const goToScene = useCallback((nextSceneId: string) => {
-    const match = getSceneById(nextSceneId);
-    if (!match) return;
-    setSceneId(nextSceneId);
-    syncTourUrl(nextSceneId, match.area.id);
+  const closeVideo = useCallback(() => {
+    setActiveVideo(null);
+    setVideoPlaying(false);
+    setVideoMuted(true);
   }, []);
+
+  const goToScene = useCallback(
+    (nextSceneId: string) => {
+      const match = getSceneById(nextSceneId);
+      if (!match) return;
+      closeVideo();
+      setSceneId(nextSceneId);
+      syncTourUrl(nextSceneId, match.area.id);
+    },
+    [closeVideo],
+  );
 
   useEffect(() => {
     const { sceneId: fromUrl } = readTourParams();
@@ -56,9 +71,15 @@ export function TourShell() {
         goToScene(detail.sceneId);
       }
     };
+    const onExitVideo = () => closeVideo();
+
     window.addEventListener("tour:navigate", onNavigate);
-    return () => window.removeEventListener("tour:navigate", onNavigate);
-  }, [goToScene]);
+    window.addEventListener("tour:exit-video", onExitVideo);
+    return () => {
+      window.removeEventListener("tour:navigate", onNavigate);
+      window.removeEventListener("tour:exit-video", onExitVideo);
+    };
+  }, [goToScene, closeVideo]);
 
   const activeIndex = allScenes.findIndex((s) => s.scene.id === sceneId);
 
@@ -74,9 +95,18 @@ export function TourShell() {
     goToScene(allScenes[index].scene.id);
   };
 
+  const handleSelectVideo = (video: TourVideo) => {
+    setInfoOpen(false);
+    setActiveVideo(video);
+    setVideoMuted(true);
+    setVideoPlaying(false);
+  };
+
   if (!activeScene || !activeArea) {
     return null;
   }
+
+  const inVideo = Boolean(activeVideo);
 
   return (
     <section
@@ -101,15 +131,19 @@ export function TourShell() {
             links={activeArea.links}
             sceneId={activeScene.id}
             debug={DEBUG}
+            videoSrc={activeVideo?.src ?? null}
+            videoPlaying={videoPlaying}
+            videoMuted={videoMuted}
             onEnterVr={() => {
               setIsVr(true);
               setInfoOpen(false);
             }}
             onExitVr={() => setIsVr(false)}
             onUserInteract={() => setShowHint(false)}
+            onVideoPlayingChange={setVideoPlaying}
           />
           <TourOverlay
-            visible={!isVr}
+            visible={!isVr && !inVideo}
             scenes={sceneOptions}
             activeSceneId={activeScene.id}
             showHint={showHint}
@@ -118,10 +152,20 @@ export function TourShell() {
             onNext={goNext}
             onInfo={() => setInfoOpen(true)}
           />
+          <VideoControls
+            visible={!isVr && inVideo && Boolean(activeVideo)}
+            title={activeVideo ? t(activeVideo.title) : ""}
+            playing={videoPlaying}
+            muted={videoMuted}
+            onPlayPause={() => setVideoPlaying((p) => !p)}
+            onMuteToggle={() => setVideoMuted((m) => !m)}
+            onClose={closeVideo}
+          />
           <InfoPanel
             open={infoOpen && !isVr}
             area={activeArea}
             onClose={() => setInfoOpen(false)}
+            onSelectVideo={handleSelectVideo}
           />
         </div>
       </div>

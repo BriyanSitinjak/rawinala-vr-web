@@ -73,6 +73,14 @@ export type SiteContent = {
     infoButton: LocalizedString;
     closeInfo: LocalizedString;
     sceneThumbLabel: LocalizedString;
+    photosHeading: LocalizedString;
+    videosHeading: LocalizedString;
+    playVideo: LocalizedString;
+    pauseVideo: LocalizedString;
+    muteVideo: LocalizedString;
+    unmuteVideo: LocalizedString;
+    closeVideo: LocalizedString;
+    backFromVideoVr: LocalizedString;
   };
   areas: TourArea[];
 };

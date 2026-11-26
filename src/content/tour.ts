@@ -42,6 +42,14 @@ export const siteContent: SiteContent = {
     infoButton: { id: "Info" },
     closeInfo: { id: "Tutup info" },
     sceneThumbLabel: { id: "Pilih adegan" },
+    photosHeading: { id: "Foto" },
+    videosHeading: { id: "Video 360°" },
+    playVideo: { id: "Putar" },
+    pauseVideo: { id: "Jeda" },
+    muteVideo: { id: "Bisukan" },
+    unmuteVideo: { id: "Suarakan" },
+    closeVideo: { id: "Tutup video" },
+    backFromVideoVr: { id: "Kembali" },
   },
   areas: [
     {

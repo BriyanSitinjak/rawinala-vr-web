@@ -53,6 +53,22 @@ export function registerTourComponents() {
     },
   });
 
+  register("tour-exit-video", {
+    init(this: {
+      el: HTMLElement & {
+        addEventListener: (type: string, fn: (e: Event) => void) => void;
+      };
+    }) {
+      this.el.classList.add("tour-exit-video");
+      const onClick = (event: Event) => {
+        event.stopPropagation();
+        window.dispatchEvent(new CustomEvent("tour:exit-video"));
+      };
+      this.el.addEventListener("click", onClick);
+      this.el.addEventListener("triggerdown", onClick);
+    },
+  });
+
   register("tour-debug-click", {
     init(this: {
       el: HTMLElement & {
