@@ -67,7 +67,12 @@ export type SiteContent = {
   tour: {
     sectionHeading: LocalizedString;
     sectionIntro: LocalizedString;
-    placeholderNote: LocalizedString;
+    dragHint: LocalizedString;
+    prevScene: LocalizedString;
+    nextScene: LocalizedString;
+    infoButton: LocalizedString;
+    closeInfo: LocalizedString;
+    sceneThumbLabel: LocalizedString;
   };
   areas: TourArea[];
 };

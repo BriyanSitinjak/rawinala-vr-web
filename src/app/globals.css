@@ -43,3 +43,16 @@ body {
   background: color-mix(in srgb, var(--color-leaf) 45%, white);
   color: var(--color-ink);
 }
+
+/* Embedded A-Frame scene must fill its positioned parent. */
+.tour-aframe-root,
+.tour-aframe-root a-scene {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.tour-aframe-root .a-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}

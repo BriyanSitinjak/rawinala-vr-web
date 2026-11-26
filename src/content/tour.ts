@@ -34,11 +34,14 @@ export const siteContent: SiteContent = {
   tour: {
     sectionHeading: { id: "Tur Virtual 360°" },
     sectionIntro: {
-      id: "Viewer tur akan muncul di sini pada tahap berikutnya. Gunakan kartu area di atas untuk memilih titik mulai.",
+      id: "Seret untuk melihat sekeliling. Ketuk penanda untuk pindah area. Di ponsel, izinkan orientasi perangkat agar giroskop aktif.",
     },
-    placeholderNote: {
-      id: "Phase 2: viewer A-Frame akan dimuat di bagian ini tanpa pindah halaman.",
-    },
+    dragHint: { id: "Seret untuk melihat sekeliling" },
+    prevScene: { id: "Adegan sebelumnya" },
+    nextScene: { id: "Adegan berikutnya" },
+    infoButton: { id: "Info" },
+    closeInfo: { id: "Tutup info" },
+    sceneThumbLabel: { id: "Pilih adegan" },
   },
   areas: [
     {
