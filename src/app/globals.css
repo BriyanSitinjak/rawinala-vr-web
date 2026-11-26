@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  --color-cream: #f3eee4;
+  --color-sand: #e6dfd2;
+  --color-mist: #d8e3dc;
+  --color-leaf: #6f9b7e;
+  --color-forest: #2f5d4a;
+  --color-forest-deep: #1c3a30;
+  --color-ink: #1a2b24;
+  --color-ink-muted: #4a5c54;
+  --color-sun: #e2b85c;
+  --color-sun-bright: #ecc978;
+  --background: var(--color-sand);
+  --foreground: var(--color-ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-leaf) 45%, white);
+  color: var(--color-ink);
+}
