@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useId, useRef } from "react";
 import { siteContent, t } from "@/content/tour";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
+import { focusRing } from "@/lib/styles";
 import type { TourArea, TourVideo } from "@/types/tour";
 
 type InfoPanelProps = {
@@ -17,35 +20,44 @@ export function InfoPanel({
   onClose,
   onSelectVideo,
 }: InfoPanelProps) {
-  if (!open || !area) return null;
-
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+  const titleId = useId();
   const ui = siteContent.tour;
+
+  useEscapeKey(onClose, open);
+
+  useEffect(() => {
+    if (open) closeRef.current?.focus();
+  }, [open]);
+
+  if (!open || !area) return null;
 
   return (
     <div
       className="absolute inset-0 z-20 flex items-end justify-end sm:items-stretch"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="tour-info-title"
+      aria-labelledby={titleId}
     >
       <button
         type="button"
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-ink)_45%,transparent)]"
+        className={`absolute inset-0 bg-[color-mix(in_srgb,var(--color-ink)_45%,transparent)] focus-visible:outline-offset-[-4px] ${focusRing.sun}`}
         aria-label={t(ui.closeInfo)}
         onClick={onClose}
       />
       <aside className="relative z-10 flex max-h-[75vh] w-full flex-col rounded-t-2xl bg-[var(--color-cream)] text-[var(--color-ink)] shadow-2xl sm:max-h-none sm:w-[min(100%,24rem)] sm:rounded-none sm:rounded-l-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-[var(--color-sand)] px-5 py-4">
           <h3
-            id="tour-info-title"
+            id={titleId}
             className="font-[family-name:var(--font-display)] text-2xl"
           >
             {t(area.title)}
           </h3>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
-            className="min-h-10 min-w-10 rounded-md text-xl leading-none text-[var(--color-ink-muted)] hover:bg-[var(--color-sand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-forest)]"
+            className={`min-h-10 min-w-10 rounded-md text-xl leading-none text-[var(--color-ink-muted)] hover:bg-[var(--color-sand)] ${focusRing.forest}`}
             aria-label={t(ui.closeInfo)}
           >
             ×
@@ -63,7 +75,7 @@ export function InfoPanel({
           <ul className="mt-3 grid grid-cols-2 gap-2">
             {area.photos.map((photo) => (
               <li
-                key={photo.src + t(photo.alt)}
+                key={`${photo.src}-${t(photo.alt)}`}
                 className="relative aspect-[4/3] overflow-hidden rounded-md bg-[var(--color-sand)]"
               >
                 <Image
@@ -86,7 +98,8 @@ export function InfoPanel({
                 <button
                   type="button"
                   onClick={() => onSelectVideo(video)}
-                  className="flex w-full items-center gap-3 rounded-md bg-[var(--color-sand)] p-2 text-left transition hover:bg-[color-mix(in_srgb,var(--color-leaf)_25%,var(--color-sand))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-forest)]"
+                  aria-label={`${t(ui.playVideo)}: ${t(video.title)}`}
+                  className={`flex w-full items-center gap-3 rounded-md bg-[var(--color-sand)] p-2 text-left transition hover:bg-[color-mix(in_srgb,var(--color-leaf)_25%,var(--color-sand))] ${focusRing.forest}`}
                 >
                   <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded">
                     <Image

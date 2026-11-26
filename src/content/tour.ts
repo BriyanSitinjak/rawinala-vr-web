@@ -1,4 +1,4 @@
-import type { SiteContent } from "@/types/tour";
+import type { Locale, LocalizedString, SiteContent } from "@/types/tour";
 
 /** Indonesian-first content. Add `en` fields later for bilingual support. */
 export const siteContent: SiteContent = {
@@ -50,6 +50,7 @@ export const siteContent: SiteContent = {
     unmuteVideo: { id: "Suarakan" },
     closeVideo: { id: "Tutup video" },
     backFromVideoVr: { id: "Kembali" },
+    loadingPanorama: { id: "Memuat panorama…" },
   },
   areas: [
     {
@@ -301,26 +302,18 @@ export const siteContent: SiteContent = {
   ],
 };
 
-export function t(value: { id: string; en?: string }, _locale: "id" | "en" = "id"): string {
+/** Resolve localized copy. Currently Indonesian-only; swap on `locale` later. */
+export function t(value: LocalizedString, locale: Locale = "id"): string {
+  if (locale === "en" && value.en) return value.en;
   return value.id;
-}
-
-export function getAreaById(areaId: string) {
-  return siteContent.areas.find((area) => area.id === areaId);
 }
 
 export function getSceneById(sceneId: string) {
   for (const area of siteContent.areas) {
     const scene = area.scenes.find((s) => s.id === sceneId);
-    if (scene) {
-      return { area, scene };
-    }
+    if (scene) return { area, scene };
   }
   return undefined;
-}
-
-export function getAreaForScene(sceneId: string) {
-  return getSceneById(sceneId)?.area;
 }
 
 export function getAllScenes() {

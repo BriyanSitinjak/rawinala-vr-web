@@ -1,29 +1,12 @@
 import type { TourLink } from "@/types/tour";
 import { t } from "@/content/tour";
 import { yawPitchToAFramePosition } from "@/lib/yawPitch";
+import { clearAFrameChildren, el } from "@/aframe/dom";
 
 const HOTSPOT_RADIUS = 7.5;
 
-type AFrameEntityEl = HTMLElement & {
-  destroy?: () => void;
-  object3D?: unknown;
-};
-
-/** Clear A-Frame entities without tripping half-initialized geometry teardown. */
 export function clearHotspotEntities(container: HTMLElement) {
-  const children = Array.from(container.children) as AFrameEntityEl[];
-  for (const child of children) {
-    try {
-      if (typeof child.destroy === "function") {
-        child.destroy();
-      } else {
-        child.remove();
-      }
-    } catch {
-      child.remove();
-    }
-  }
-  container.replaceChildren();
+  clearAFrameChildren(container);
 }
 
 export function buildHotspotEntities(
@@ -33,43 +16,30 @@ export function buildHotspotEntities(
 ) {
   clearHotspotEntities(container);
 
-  const visibleLinks = links.filter(
-    (link) => link.targetSceneId !== currentSceneId,
-  );
+  for (const link of links) {
+    if (link.targetSceneId === currentSceneId) continue;
 
-  for (const link of visibleLinks) {
-    const entity = document.createElement("a-entity");
-    const position = yawPitchToAFramePosition(
-      link.yaw,
-      link.pitch,
-      HOTSPOT_RADIUS,
-    );
     const label = t(link.label);
+    const entity = el("a-entity", {
+      class: "tour-hotspot",
+      position: yawPitchToAFramePosition(link.yaw, link.pitch, HOTSPOT_RADIUS),
+      geometry:
+        "primitive: sphere; radius: 0.28; segmentsWidth: 16; segmentsHeight: 12",
+      material: "color: #e2b85c; opacity: 0.92; shader: flat",
+      "tour-hotspot": `targetSceneId: ${link.targetSceneId}`,
+      "look-at": "#tour-camera",
+    });
 
-    // Set class before append so raycasters can see it once attached.
-    entity.setAttribute("class", "tour-hotspot");
-    entity.setAttribute("position", position);
-    // Prefer primitive elements' attributes after mount — set via sphere primitive.
-    entity.setAttribute(
-      "geometry",
-      "primitive: sphere; radius: 0.28; segmentsWidth: 16; segmentsHeight: 12",
+    entity.appendChild(
+      el("a-text", {
+        value: label,
+        align: "center",
+        width: "4",
+        color: "#f3eee4",
+        position: "0 0.5 0",
+      }),
     );
-    entity.setAttribute(
-      "material",
-      "color: #e2b85c; opacity: 0.92; shader: flat",
-    );
-    entity.setAttribute("tour-hotspot", `targetSceneId: ${link.targetSceneId}`);
-    entity.setAttribute("look-at", "#tour-camera");
 
-    const text = document.createElement("a-text");
-    text.setAttribute("value", label);
-    text.setAttribute("align", "center");
-    text.setAttribute("width", "4");
-    text.setAttribute("color", "#f3eee4");
-    text.setAttribute("position", "0 0.5 0");
-    entity.appendChild(text);
-
-    // Append first so the entity joins the scene graph, then components init safely.
     container.appendChild(entity);
   }
 }

@@ -44,6 +44,26 @@ body {
   color: var(--color-ink);
 }
 
+/* Consistent visible keyboard focus across the demo */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-sun);
+  outline-offset: 3px;
+}
+
+@keyframes tour-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: tour-spin 0.8s linear infinite;
+}
+
 /* Embedded A-Frame scene must fill its positioned parent. */
 .tour-aframe-root,
 .tour-aframe-root a-scene {

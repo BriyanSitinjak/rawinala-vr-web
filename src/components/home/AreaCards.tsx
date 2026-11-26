@@ -2,17 +2,8 @@
 
 import Image from "next/image";
 import { siteContent, t } from "@/content/tour";
-
-function openAreaInTour(areaId: string, firstSceneId: string) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("area", areaId);
-  url.searchParams.set("scene", firstSceneId);
-  window.history.replaceState(null, "", url);
-  document.getElementById("tour")?.scrollIntoView({ behavior: "smooth" });
-  window.dispatchEvent(
-    new CustomEvent("tour:navigate", { detail: { sceneId: firstSceneId } }),
-  );
-}
+import { openTourScene } from "@/lib/tourUrl";
+import { focusRing } from "@/lib/styles";
 
 export function AreaCards() {
   const { areasHeading, areasIntro, openAreaCta } = siteContent.home;
@@ -71,9 +62,10 @@ export function AreaCards() {
                       type="button"
                       disabled={!firstSceneId}
                       onClick={() =>
-                        firstSceneId && openAreaInTour(area.id, firstSceneId)
+                        firstSceneId && openTourScene(firstSceneId, area.id)
                       }
-                      className="inline-flex min-h-11 w-fit items-center justify-center rounded-md bg-[var(--color-forest)] px-5 text-sm font-semibold text-[var(--color-cream)] transition hover:bg-[var(--color-forest-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--color-forest)] disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label={`${t(openAreaCta)}: ${t(area.title)}`}
+                      className={`inline-flex min-h-11 w-fit items-center justify-center rounded-md bg-[var(--color-forest)] px-5 text-sm font-semibold text-[var(--color-cream)] transition hover:bg-[var(--color-forest-deep)] disabled:cursor-not-allowed disabled:opacity-50 ${focusRing.forest}`}
                     >
                       {t(openAreaCta)}
                     </button>

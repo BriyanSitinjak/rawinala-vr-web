@@ -1,4 +1,5 @@
 import { positionToYawPitch } from "@/lib/yawPitch";
+import { dispatchTourExitVideo, dispatchTourNavigate } from "@/lib/tourEvents";
 
 type AFrameComponentSystem = {
   components: Record<string, unknown>;
@@ -11,11 +12,19 @@ declare global {
   }
 }
 
+type ClickableEl = HTMLElement & {
+  addEventListener: (type: string, fn: (e: Event) => void) => void;
+};
+
 function register(name: string, definition: object) {
   const AFRAME = window.AFRAME;
-  if (!AFRAME) return;
-  if (AFRAME.components[name]) return;
+  if (!AFRAME || AFRAME.components[name]) return;
   AFRAME.registerComponent(name, definition);
+}
+
+function bindClickAndTrigger(el: ClickableEl, handler: (event: Event) => void) {
+  el.addEventListener("click", handler);
+  el.addEventListener("triggerdown", handler);
 }
 
 export function registerTourComponents() {
@@ -25,66 +34,36 @@ export function registerTourComponents() {
     },
     init(this: {
       data: { targetSceneId: string };
-      el: HTMLElement & {
-        addEventListener: (type: string, fn: (e: Event) => void) => void;
-        setAttribute: (name: string, value: string) => void;
-      };
+      el: ClickableEl & { setAttribute: (n: string, v: string) => void };
     }) {
       this.el.classList.add("tour-hotspot");
       this.el.setAttribute("data-target-scene", this.data.targetSceneId);
 
-      const onClick = (event: Event) => {
+      bindClickAndTrigger(this.el, (event) => {
         event.stopPropagation();
-        const detail = { sceneId: this.data.targetSceneId };
-        this.el.dispatchEvent(
-          new CustomEvent("tour:navigate", {
-            detail,
-            bubbles: true,
-            composed: true,
-          }),
-        );
-        window.dispatchEvent(
-          new CustomEvent("tour:navigate", { detail }),
-        );
-      };
-
-      this.el.addEventListener("click", onClick);
-      this.el.addEventListener("triggerdown", onClick);
+        dispatchTourNavigate(this.data.targetSceneId);
+      });
     },
   });
 
   register("tour-exit-video", {
-    init(this: {
-      el: HTMLElement & {
-        addEventListener: (type: string, fn: (e: Event) => void) => void;
-      };
-    }) {
+    init(this: { el: ClickableEl }) {
       this.el.classList.add("tour-exit-video");
-      const onClick = (event: Event) => {
+      bindClickAndTrigger(this.el, (event) => {
         event.stopPropagation();
-        window.dispatchEvent(new CustomEvent("tour:exit-video"));
-      };
-      this.el.addEventListener("click", onClick);
-      this.el.addEventListener("triggerdown", onClick);
+        dispatchTourExitVideo();
+      });
     },
   });
 
   register("tour-debug-click", {
-    init(this: {
-      el: HTMLElement & {
-        addEventListener: (
-          type: string,
-          fn: (e: CustomEvent & { detail?: { intersection?: { point: { x: number; y: number; z: number } } } }) => void,
-        ) => void;
-        sceneEl?: HTMLElement & {
-          addEventListener: (type: string, fn: (e: Event) => void) => void;
-        };
-      };
-    }) {
-      const handler = (event: {
-        detail?: { intersection?: { point: { x: number; y: number; z: number } } };
-      }) => {
-        const point = event.detail?.intersection?.point;
+    init(this: { el: ClickableEl }) {
+      this.el.addEventListener("click", ((event: Event) => {
+        const point = (
+          event as CustomEvent<{
+            intersection?: { point: { x: number; y: number; z: number } };
+          }>
+        ).detail?.intersection?.point;
         if (!point) return;
         const { yaw, pitch } = positionToYawPitch(point);
         // eslint-disable-next-line no-console
@@ -92,9 +71,7 @@ export function registerTourComponents() {
           yaw: Number(yaw.toFixed(2)),
           pitch: Number(pitch.toFixed(2)),
         });
-      };
-
-      this.el.addEventListener("click", handler as never);
+      }) as EventListener);
     },
   });
 }

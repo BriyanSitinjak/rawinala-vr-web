@@ -1,4 +1,5 @@
 import { siteContent, t } from "@/content/tour";
+import { focusRing } from "@/lib/styles";
 
 export function Footer() {
   const { contactHeading, address, phone, email, note } = siteContent.footer;
@@ -23,7 +24,7 @@ export function Footer() {
             <li>
               <a
                 href={`tel:${t(phone).replace(/\s/g, "")}`}
-                className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--color-sun)]"
+                className={`underline-offset-4 hover:underline ${focusRing.sun}`}
               >
                 {t(phone)}
               </a>
@@ -31,7 +32,7 @@ export function Footer() {
             <li>
               <a
                 href={`mailto:${t(email)}`}
-                className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--color-sun)]"
+                className={`underline-offset-4 hover:underline ${focusRing.sun}`}
               >
                 {t(email)}
               </a>

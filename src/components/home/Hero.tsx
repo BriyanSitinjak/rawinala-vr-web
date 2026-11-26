@@ -2,13 +2,11 @@
 
 import Image from "next/image";
 import { siteContent, t } from "@/content/tour";
+import { scrollToId } from "@/lib/scroll";
+import { focusRing } from "@/lib/styles";
 
 export function Hero() {
   const { brandName, heroParagraph, ctaStartTour } = siteContent.home;
-
-  const scrollToTour = () => {
-    document.getElementById("tour")?.scrollIntoView({ behavior: "smooth" });
-  };
 
   return (
     <header className="relative isolate min-h-[100svh] overflow-hidden text-[var(--color-cream)]">
@@ -39,8 +37,8 @@ export function Hero() {
         <div className="mt-8 animate-[fade-rise_0.9s_ease-out_0.3s_both]">
           <button
             type="button"
-            onClick={scrollToTour}
-            className="inline-flex min-h-12 items-center justify-center rounded-md bg-[var(--color-sun)] px-6 text-base font-semibold text-[var(--color-ink)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-sun-bright)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-cream)]"
+            onClick={() => scrollToId("tour")}
+            className={`inline-flex min-h-12 items-center justify-center rounded-md bg-[var(--color-sun)] px-6 text-base font-semibold text-[var(--color-ink)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-sun-bright)] ${focusRing.cream}`}
           >
             {t(ctaStartTour)}
           </button>

@@ -81,6 +81,7 @@ export type SiteContent = {
     unmuteVideo: LocalizedString;
     closeVideo: LocalizedString;
     backFromVideoVr: LocalizedString;
+    loadingPanorama: LocalizedString;
   };
   areas: TourArea[];
 };

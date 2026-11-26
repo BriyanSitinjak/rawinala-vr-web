@@ -21,7 +21,7 @@ export function yawPitchToPosition(
   };
 }
 
-export function positionToAFrameString(position: Vec3): string {
+function positionToAFrameString(position: Vec3): string {
   return `${position.x} ${position.y} ${position.z}`;
 }
 

@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import type { KeyboardEvent, RefObject } from "react";
 import { siteContent, t } from "@/content/tour";
+import { focusRing, overlayChip } from "@/lib/styles";
 import type { TourScene } from "@/types/tour";
 
 export type SceneOption = {
@@ -18,6 +20,7 @@ type TourOverlayProps = {
   onPrev: () => void;
   onNext: () => void;
   onInfo: () => void;
+  infoButtonRef?: RefObject<HTMLButtonElement | null>;
 };
 
 export function TourOverlay({
@@ -29,17 +32,41 @@ export function TourOverlay({
   onPrev,
   onNext,
   onInfo,
+  infoButtonRef,
 }: TourOverlayProps) {
   if (!visible) return null;
 
   const ui = siteContent.tour;
-  const activeIndex = scenes.findIndex((s) => s.scene.id === activeSceneId);
-  const active = scenes[activeIndex];
+  const active = scenes.find((s) => s.scene.id === activeSceneId);
+  const navBtn = `min-h-10 min-w-10 px-4 text-sm font-medium ${overlayChip} ${focusRing.sun}`;
+
+  const onStripKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      onPrev();
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      onNext();
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      if (scenes[0]) onSelectScene(scenes[0].scene.id);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      const last = scenes[scenes.length - 1];
+      if (last) onSelectScene(last.scene.id);
+    }
+  };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
+    <div
+      className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-4"
+      aria-label={t(ui.sectionHeading)}
+    >
       <div className="pointer-events-auto flex items-start justify-between gap-3">
-        <div className="max-w-[70%] rounded-md bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)] px-3 py-2 text-[var(--color-cream)] backdrop-blur-sm">
+        <div
+          className="max-w-[70%] rounded-md bg-[color-mix(in_srgb,var(--color-forest-deep)_72%,transparent)] px-3 py-2 text-[var(--color-cream)] backdrop-blur-sm"
+          aria-live="polite"
+        >
           <p className="text-xs uppercase tracking-[0.12em] text-[var(--color-sun)]">
             {active?.areaTitle}
           </p>
@@ -48,9 +75,10 @@ export function TourOverlay({
           </p>
         </div>
         <button
+          ref={infoButtonRef}
           type="button"
           onClick={onInfo}
-          className="min-h-10 rounded-md bg-[var(--color-sun)] px-4 text-sm font-semibold text-[var(--color-ink)] shadow-sm transition hover:bg-[var(--color-sun-bright)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--color-cream)]"
+          className={`min-h-10 rounded-md bg-[var(--color-sun)] px-4 text-sm font-semibold text-[var(--color-ink)] shadow-sm transition hover:bg-[var(--color-sun-bright)] ${focusRing.cream}`}
           aria-label={t(ui.infoButton)}
         >
           {t(ui.infoButton)}
@@ -70,7 +98,7 @@ export function TourOverlay({
           <button
             type="button"
             onClick={onPrev}
-            className="min-h-10 rounded-md bg-[color-mix(in_srgb,var(--color-forest-deep)_78%,transparent)] px-4 text-sm font-medium text-[var(--color-cream)] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--color-sun)]"
+            className={navBtn}
             aria-label={t(ui.prevScene)}
           >
             ←
@@ -78,7 +106,7 @@ export function TourOverlay({
           <button
             type="button"
             onClick={onNext}
-            className="min-h-10 rounded-md bg-[color-mix(in_srgb,var(--color-forest-deep)_78%,transparent)] px-4 text-sm font-medium text-[var(--color-cream)] backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--color-sun)]"
+            className={navBtn}
             aria-label={t(ui.nextScene)}
           >
             →
@@ -86,9 +114,14 @@ export function TourOverlay({
         </div>
 
         <div
-          className="overflow-x-auto rounded-xl bg-[color-mix(in_srgb,var(--color-forest-deep)_78%,transparent)] p-2 backdrop-blur-sm"
+          className={`overflow-x-auto p-2 ${overlayChip}`}
           role="listbox"
+          tabIndex={0}
           aria-label={t(ui.sceneThumbLabel)}
+          aria-activedescendant={
+            active ? `tour-scene-${active.scene.id}` : undefined
+          }
+          onKeyDown={onStripKeyDown}
         >
           <ul className="flex w-max gap-2">
             {scenes.map(({ scene, areaTitle }) => {
@@ -96,12 +129,14 @@ export function TourOverlay({
               return (
                 <li key={scene.id}>
                   <button
+                    id={`tour-scene-${scene.id}`}
                     type="button"
                     role="option"
+                    tabIndex={selected ? 0 : -1}
                     aria-selected={selected}
                     aria-label={`${areaTitle}: ${t(scene.title)}`}
                     onClick={() => onSelectScene(scene.id)}
-                    className={`relative h-16 w-24 overflow-hidden rounded-md ring-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sun)] ${
+                    className={`relative h-16 w-24 overflow-hidden rounded-md ring-2 transition ${focusRing.sun} ${
                       selected
                         ? "ring-[var(--color-sun)]"
                         : "ring-transparent opacity-85 hover:opacity-100"

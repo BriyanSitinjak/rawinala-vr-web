@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getAllScenes,
   getSceneById,
   siteContent,
   t,
 } from "@/content/tour";
-import { readTourParams, syncTourUrl } from "@/lib/tourUrl";
+import { onTourExitVideo, onTourNavigate } from "@/lib/tourEvents";
+import { readTourSceneId, syncTourUrl } from "@/lib/tourUrl";
 import type { TourVideo } from "@/types/tour";
 import { InfoPanel } from "./InfoPanel";
+import { LoadingIndicator } from "./LoadingIndicator";
 import { TourOverlay } from "./TourOverlay";
 import { TourViewer } from "./TourViewer";
 import { VideoControls } from "./VideoControls";
@@ -35,15 +37,23 @@ export function TourShell() {
   const [activeVideo, setActiveVideo] = useState<TourVideo | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
+  const [panoramaLoading, setPanoramaLoading] = useState(true);
+  const infoButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const resolved = getSceneById(sceneId) ?? getSceneById(DEFAULT_SCENE_ID);
   const activeArea = resolved?.area;
   const activeScene = resolved?.scene;
+  const activeIndex = allScenes.findIndex((s) => s.scene.id === sceneId);
 
   const closeVideo = useCallback(() => {
     setActiveVideo(null);
     setVideoPlaying(false);
     setVideoMuted(true);
+  }, []);
+
+  const closeInfo = useCallback(() => {
+    setInfoOpen(false);
+    queueMicrotask(() => infoButtonRef.current?.focus());
   }, []);
 
   const goToScene = useCallback(
@@ -57,43 +67,29 @@ export function TourShell() {
     [closeVideo],
   );
 
+  const stepScene = useCallback(
+    (delta: number) => {
+      if (allScenes.length === 0) return;
+      const index =
+        (activeIndex + delta + allScenes.length) % allScenes.length;
+      goToScene(allScenes[index].scene.id);
+    },
+    [activeIndex, allScenes, goToScene],
+  );
+
   useEffect(() => {
-    const { sceneId: fromUrl } = readTourParams();
-    if (fromUrl && getSceneById(fromUrl)) {
-      setSceneId(fromUrl);
-    }
+    const fromUrl = readTourSceneId();
+    if (fromUrl && getSceneById(fromUrl)) setSceneId(fromUrl);
   }, []);
 
   useEffect(() => {
-    const onNavigate = (event: Event) => {
-      const detail = (event as CustomEvent<{ sceneId: string }>).detail;
-      if (detail?.sceneId) {
-        goToScene(detail.sceneId);
-      }
-    };
-    const onExitVideo = () => closeVideo();
-
-    window.addEventListener("tour:navigate", onNavigate);
-    window.addEventListener("tour:exit-video", onExitVideo);
+    const offNavigate = onTourNavigate(goToScene);
+    const offExit = onTourExitVideo(closeVideo);
     return () => {
-      window.removeEventListener("tour:navigate", onNavigate);
-      window.removeEventListener("tour:exit-video", onExitVideo);
+      offNavigate();
+      offExit();
     };
   }, [goToScene, closeVideo]);
-
-  const activeIndex = allScenes.findIndex((s) => s.scene.id === sceneId);
-
-  const goPrev = () => {
-    if (allScenes.length === 0) return;
-    const index = (activeIndex - 1 + allScenes.length) % allScenes.length;
-    goToScene(allScenes[index].scene.id);
-  };
-
-  const goNext = () => {
-    if (allScenes.length === 0) return;
-    const index = (activeIndex + 1) % allScenes.length;
-    goToScene(allScenes[index].scene.id);
-  };
 
   const handleSelectVideo = (video: TourVideo) => {
     setInfoOpen(false);
@@ -102,9 +98,10 @@ export function TourShell() {
     setVideoPlaying(false);
   };
 
-  if (!activeScene || !activeArea) {
-    return null;
-  }
+  const togglePlay = useCallback(() => setVideoPlaying((p) => !p), []);
+  const toggleMute = useCallback(() => setVideoMuted((m) => !m), []);
+
+  if (!activeScene || !activeArea) return null;
 
   const inVideo = Boolean(activeVideo);
 
@@ -125,7 +122,10 @@ export function TourShell() {
           {t(siteContent.tour.sectionIntro)}
         </p>
 
-        <div className="relative mt-8 aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-[0_24px_60px_-32px_rgba(28,58,48,0.55)] sm:aspect-[16/10] lg:aspect-[16/9]">
+        <div
+          className="relative mt-8 aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-[0_24px_60px_-32px_rgba(28,58,48,0.55)] sm:aspect-[16/10] lg:aspect-[16/9]"
+          aria-busy={panoramaLoading && !inVideo}
+        >
           <TourViewer
             imageSrc={activeScene.image}
             links={activeArea.links}
@@ -141,30 +141,33 @@ export function TourShell() {
             onExitVr={() => setIsVr(false)}
             onUserInteract={() => setShowHint(false)}
             onVideoPlayingChange={setVideoPlaying}
+            onLoadingChange={setPanoramaLoading}
           />
+          <LoadingIndicator visible={panoramaLoading && !inVideo && !isVr} />
           <TourOverlay
             visible={!isVr && !inVideo}
             scenes={sceneOptions}
             activeSceneId={activeScene.id}
-            showHint={showHint}
+            showHint={showHint && !panoramaLoading}
             onSelectScene={goToScene}
-            onPrev={goPrev}
-            onNext={goNext}
+            onPrev={() => stepScene(-1)}
+            onNext={() => stepScene(1)}
             onInfo={() => setInfoOpen(true)}
+            infoButtonRef={infoButtonRef}
           />
           <VideoControls
             visible={!isVr && inVideo && Boolean(activeVideo)}
             title={activeVideo ? t(activeVideo.title) : ""}
             playing={videoPlaying}
             muted={videoMuted}
-            onPlayPause={() => setVideoPlaying((p) => !p)}
-            onMuteToggle={() => setVideoMuted((m) => !m)}
+            onPlayPause={togglePlay}
+            onMuteToggle={toggleMute}
             onClose={closeVideo}
           />
           <InfoPanel
             open={infoOpen && !isVr}
             area={activeArea}
-            onClose={() => setInfoOpen(false)}
+            onClose={closeInfo}
             onSelectVideo={handleSelectVideo}
           />
         </div>
